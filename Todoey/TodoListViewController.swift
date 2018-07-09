@@ -11,7 +11,7 @@ import UIKit
 // Since we inherit uitableviewcontroller, we don't need to set ourselves as the delegates for it, or set up iboutlets for it
 class TodoListViewController: UITableViewController {
 
-    let itemArray = ["Find Mike", "Buy Eggos", "destroy demogorgon"]
+    var itemArray = ["Find Mike", "Buy Eggos", "destroy demogorgon"]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,5 +52,29 @@ class TodoListViewController: UITableViewController {
         // Make the selection not persist or stay highlighted
         tableView.deselectRow(at: indexPath, animated: true)
     }
+    
+    //MARK: - Add New Items
+    
+    @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
+        let alert = UIAlertController(title: "Add new Todoey Item", message: "", preferredStyle: .alert)
+        let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
+            // What will happen once the user click the Add Item button on the UIAlert
+            print("Success!")
+            
+            let textField = alert.textFields![0]
+            print("Textfield: \(textField.text!)")
+            
+            self.itemArray.append(textField.text!)
+            self.tableView.reloadData() // Need to reload data once data is changed
+        }
+        alert.addTextField { (alertTextField) in
+            // What will happen once the text field is added to the alert
+            alertTextField.placeholder = "Create new item"
+        }
+        
+        alert.addAction(action)
+        present(alert, animated: true, completion: nil)
+    }
+    
 }
 
