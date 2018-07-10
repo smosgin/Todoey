@@ -47,12 +47,6 @@ class TodoListViewController: UITableViewController {
         } else {
             print("failllllled to load old stuff")
         }
-        
-//        if let items = defaults.array(forKey: "ToDoListArray") as? [String] {
-//            itemArray = items
-//        } else {
-//            itemArray = ["New list"]
-//        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -86,11 +80,15 @@ class TodoListViewController: UITableViewController {
         
         cell.textLabel?.text = item.title
         
-        if item.done == true {
-            cell.accessoryType = .checkmark
-        } else {
-            cell.accessoryType = .none
-        }
+//        if item.done == true {
+//            cell.accessoryType = .checkmark
+//        } else {
+//            cell.accessoryType = .none
+//        }
+        
+        // Ternary operator
+        // value = condition ? valueIfTrue : valueIfFalse
+        cell.accessoryType = item.done ? .checkmark : .none // This does the same thing as the previous (commented out) if statement
         
         return cell
     }
