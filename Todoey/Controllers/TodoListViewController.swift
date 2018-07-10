@@ -11,24 +11,45 @@ import UIKit
 // Since we inherit uitableviewcontroller, we don't need to set ourselves as the delegates for it, or set up iboutlets for it
 class TodoListViewController: UITableViewController {
 
-    var itemArray = ["Find Mike", "Buy Eggos", "destroy demogorgon"]
+    var itemArray = [Item]()
+    var dataArray = [Data]()
     
     let defaults = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        let newItem = Item()
+        newItem.title = "First item"
+        itemArray.append(newItem)
         
-        if let items = defaults.array(forKey: "ToDoListArray") as? [String] {
-            itemArray = items
-        } else {
-            itemArray = ["New list"]
+        if let items = defaults.array(forKey: "ToDoListArray") as? [Data] {
+            for i in items {
+                itemArray.append(dataToItem(data: i))
+            }
+            dataArray = items
         }
+        
+//        if let items = defaults.array(forKey: "ToDoListArray") as? [String] {
+//            itemArray = items
+//        } else {
+//            itemArray = ["New list"]
+//        }
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    
+    //MARK: - Transforming between Item objects and Data objects
+    
+    func itemToData(item: Item) -> Data {
+        return NSKeyedArchiver.archivedData(withRootObject: item)
+    }
+    
+    func dataToItem(data: Data) -> Item {
+        return NSKeyedUnarchiver.unarchiveObject(with: data) as! Item
     }
 
     //MARK: - Tableview Datasource Methods
@@ -36,7 +57,7 @@ class TodoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
         
-        cell.textLabel?.text = itemArray[indexPath.row]
+        cell.textLabel?.text = itemArray[indexPath.row].title
         
         return cell
     }
@@ -71,11 +92,15 @@ class TodoListViewController: UITableViewController {
             
             let textField = alert.textFields![0]
             print("Textfield: \(textField.text!)")
+            let newItem = Item(title: textField.text!, done: false)
             
-            self.itemArray.append(textField.text!)
+            //transform item into
+            
+            self.itemArray.append(newItem)
+            self.dataArray.append(self.itemToData(item: newItem))
             self.tableView.reloadData() // Need to reload data once data is changed
             
-            self.defaults.set(self.itemArray, forKey: "ToDoListArray") // Add the itemArray to the user defaults to store locally
+            self.defaults.set(self.dataArray, forKey: "ToDoListArray") // Add the dataArray to the user defaults to store locally
         }
         alert.addTextField { (alertTextField) in
             // What will happen once the text field is added to the alert
