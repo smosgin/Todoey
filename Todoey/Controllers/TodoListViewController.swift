@@ -19,8 +19,23 @@ class TodoListViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        let newItem2 = Item(title: "First item")
+        itemArray.append(newItem2)
+        let newItem3 = Item(title: "Second item")
+        itemArray.append(newItem3)
         let newItem = Item()
-        newItem.title = "First item"
+        newItem.title = "Third item"
+        itemArray.append(newItem)
+        itemArray.append(newItem)
+        itemArray.append(newItem)
+        itemArray.append(newItem)
+        itemArray.append(newItem)
+        itemArray.append(newItem)
+        itemArray.append(newItem)
+        itemArray.append(newItem)
+        itemArray.append(newItem)
+        itemArray.append(newItem)
+        itemArray.append(newItem)
         itemArray.append(newItem)
         
         if let items = defaults.array(forKey: "ToDoListArray") as? [Data] {
@@ -51,32 +66,48 @@ class TodoListViewController: UITableViewController {
     func dataToItem(data: Data) -> Item {
         return NSKeyedUnarchiver.unarchiveObject(with: data) as! Item
     }
+    
+    func saveData() {
+        for i in itemArray {
+            dataArray.append(itemToData(item: i))
+        }
+    }
 
     //MARK: - Tableview Datasource Methods
     
+    // Populate table with data
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        let item = itemArray[indexPath.row]
         
-        cell.textLabel?.text = itemArray[indexPath.row].title
+        cell.textLabel?.text = item.title
+        
+        if item.done == true {
+            cell.accessoryType = .checkmark
+        } else {
+            cell.accessoryType = .none
+        }
         
         return cell
     }
     
+    // How many rows in a section?
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemArray.count
     }
     
     //MARK: - Tableview Delegate Methods
     
+    // Row was selected
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 //        print(itemArray[indexPath.row])
-        let cell = tableView.cellForRow(at: indexPath) // Grab a reference to the cell that we selected
+//        let cell = tableView.cellForRow(at: indexPath) // Grab a reference to the cell that we selected
         
-        if cell?.accessoryType == .checkmark {
-            cell?.accessoryType = .none
-        } else {
-            cell?.accessoryType = .checkmark
-        }
+        // Invert the value of the done property, since it was selected
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+        
+        // Now that we've changed the done property, reload the data so it can be reflected in the table
+        tableView.reloadData()
         
         // Make the selection not persist or stay highlighted
         tableView.deselectRow(at: indexPath, animated: true)
