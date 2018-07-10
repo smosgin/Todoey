@@ -10,7 +10,7 @@ import UIKit
 
 // Since we inherit uitableviewcontroller, we don't need to set ourselves as the delegates for it, or set up iboutlets for it
 class TodoListViewController: UITableViewController {
-
+    
     var itemArray = [Item]()
     var dataArray = [Data]()
     
@@ -19,30 +19,33 @@ class TodoListViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        let newItem2 = Item(title: "First item")
-        itemArray.append(newItem2)
-        let newItem3 = Item(title: "Second item")
-        itemArray.append(newItem3)
-        let newItem = Item()
-        newItem.title = "Third item"
-        itemArray.append(newItem)
-        itemArray.append(newItem)
-        itemArray.append(newItem)
-        itemArray.append(newItem)
-        itemArray.append(newItem)
-        itemArray.append(newItem)
-        itemArray.append(newItem)
-        itemArray.append(newItem)
-        itemArray.append(newItem)
-        itemArray.append(newItem)
-        itemArray.append(newItem)
-        itemArray.append(newItem)
+//        let newItem2 = Item(title: "First item")
+//        itemArray.append(newItem2)
+//        let newItem3 = Item(title: "Second item")
+//        itemArray.append(newItem3)
+//        let newItem = Item()
+//        newItem.title = "Third item"
+//        itemArray.append(newItem)
+//        itemArray.append(newItem)
+//        itemArray.append(newItem)
+//        itemArray.append(newItem)
+//        itemArray.append(newItem)
+//        itemArray.append(newItem)
+//        itemArray.append(newItem)
+//        itemArray.append(newItem)
+//        itemArray.append(newItem)
+//        itemArray.append(newItem)
+//        itemArray.append(newItem)
+//        itemArray.append(newItem)
         
         if let items = defaults.array(forKey: "ToDoListArray") as? [Data] {
             for i in items {
                 itemArray.append(dataToItem(data: i))
             }
             dataArray = items
+            print(dataArray)
+        } else {
+            print("failllllled to load old stuff")
         }
         
 //        if let items = defaults.array(forKey: "ToDoListArray") as? [String] {
@@ -71,6 +74,7 @@ class TodoListViewController: UITableViewController {
         for i in itemArray {
             dataArray.append(itemToData(item: i))
         }
+        defaults.set(dataArray, forKey: "ToDoListArray") // Add the dataArray to the user defaults to store locally
     }
 
     //MARK: - Tableview Datasource Methods
@@ -102,12 +106,17 @@ class TodoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 //        print(itemArray[indexPath.row])
 //        let cell = tableView.cellForRow(at: indexPath) // Grab a reference to the cell that we selected
+        let row = indexPath.row
+        let item = itemArray[row]
         
         // Invert the value of the done property, since it was selected
-        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+        item.done = !item.done
         
         // Now that we've changed the done property, reload the data so it can be reflected in the table
         tableView.reloadData()
+        
+        dataArray[row] = itemToData(item: item)
+        self.defaults.set(self.dataArray, forKey: "ToDoListArray")
         
         // Make the selection not persist or stay highlighted
         tableView.deselectRow(at: indexPath, animated: true)
