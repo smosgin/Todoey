@@ -7,22 +7,21 @@
 //
 
 import UIKit
+import CoreData
 
 // Since we inherit uitableviewcontroller, we don't need to set ourselves as the delegates for it, or set up iboutlets for it
 class TodoListViewController: UITableViewController {
     
     var itemArray = [Item]()
-    var dataArray = [Data]()
-    
-    var i = 2
     
     let documentsFolderPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first // Path to Documents in User dir
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist") // What we want to call our file in the path
+    // Grab a reference to the singleton app instance (our app when it's running) and its delegate, to then access AppDelegate's conainer/database's context var
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        print(dataFilePath)
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         
         loadItems()
     }
@@ -83,6 +82,8 @@ class TodoListViewController: UITableViewController {
         let row = indexPath.row
         let item = itemArray[row]
         
+//        context.delete(item)
+//        itemArray.remove(at: row)
         // Invert the value of the done property, since it was selected
         item.done = !item.done
         
@@ -103,8 +104,9 @@ class TodoListViewController: UITableViewController {
             
             let textField = alert.textFields![0]
             print("Textfield: \(textField.text!)")
-            let newItem = Item()
+            let newItem = Item(context: self.context)
             newItem.title = textField.text!
+            newItem.done = false
             
             self.itemArray.append(newItem)
             self.saveItems()
@@ -125,26 +127,48 @@ class TodoListViewController: UITableViewController {
     //MARK: - Model Manipulation Methods
     
     func saveItems() {
-        let encoder = PropertyListEncoder()
         do {
-            let data = try encoder.encode(itemArray)
-            try data.write(to: dataFilePath!)
+            try context.save()
         } catch {
-            print("Error encoding item array, \(error)")
+            print("Error saving context, \(error)")
         }
         self.tableView.reloadData() // Need to reload data once data is changed
     }
     
-    func loadItems() {
-        if let data = try? Data(contentsOf: dataFilePath!) {
-            let decoder = PropertyListDecoder()
-            do {
-                itemArray = try decoder.decode([Item].self, from: data)
-            } catch {
-                print("Error decoding, \(error)")
-            }
+    // The = Item.fetchrequest() here is a default value, allowing us to call this method without providing a request
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
+        do {
+            itemArray = try context.fetch(request)
+        } catch {
+            print("Error fetching data from context \(error)")
         }
+        tableView.reloadData()
+    }
+}
+
+//MARK: - Search bar methods
+extension TodoListViewController: UISearchBarDelegate {
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!) // [cd] here means that our search is case and diacretic insensitive
+        
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+        
+        loadItems(with: request)
     }
     
+    // Text changed in the search bar
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 { // If text has changed down to 0 chars (user clicked the X button)
+            loadItems() // Get everything out of the table
+            
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder() // We grabbed a reference to the main thread to ensure that we resignFirstResponder in the foreground
+            }
+            
+        }
+    }
 }
 
