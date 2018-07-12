@@ -14,39 +14,17 @@ class TodoListViewController: UITableViewController {
     var itemArray = [Item]()
     var dataArray = [Data]()
     
-    let defaults = UserDefaults.standard
+    var i = 2
+    
+    let documentsFolderPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first // Path to Documents in User dir
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist") // What we want to call our file in the path
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-//        let newItem2 = Item(title: "First item")
-//        itemArray.append(newItem2)
-//        let newItem3 = Item(title: "Second item")
-//        itemArray.append(newItem3)
-//        let newItem = Item()
-//        newItem.title = "Third item"
-//        itemArray.append(newItem)
-//        itemArray.append(newItem)
-//        itemArray.append(newItem)
-//        itemArray.append(newItem)
-//        itemArray.append(newItem)
-//        itemArray.append(newItem)
-//        itemArray.append(newItem)
-//        itemArray.append(newItem)
-//        itemArray.append(newItem)
-//        itemArray.append(newItem)
-//        itemArray.append(newItem)
-//        itemArray.append(newItem)
+        print(dataFilePath)
         
-        if let items = defaults.array(forKey: "ToDoListArray") as? [Data] {
-            for i in items {
-                itemArray.append(dataToItem(data: i))
-            }
-            dataArray = items
-            print(dataArray)
-        } else {
-            print("failllllled to load old stuff")
-        }
+        loadItems()
     }
 
     override func didReceiveMemoryWarning() {
@@ -56,20 +34,20 @@ class TodoListViewController: UITableViewController {
     
     //MARK: - Transforming between Item objects and Data objects
     
-    func itemToData(item: Item) -> Data {
-        return NSKeyedArchiver.archivedData(withRootObject: item)
-    }
-    
-    func dataToItem(data: Data) -> Item {
-        return NSKeyedUnarchiver.unarchiveObject(with: data) as! Item
-    }
-    
-    func saveData() {
-        for i in itemArray {
-            dataArray.append(itemToData(item: i))
-        }
-        defaults.set(dataArray, forKey: "ToDoListArray") // Add the dataArray to the user defaults to store locally
-    }
+//    func itemToData(item: Item) -> Data {
+//        return NSKeyedArchiver.archivedData(withRootObject: item)
+//    }
+//
+//    func dataToItem(data: Data) -> Item {
+//        return NSKeyedUnarchiver.unarchiveObject(with: data) as! Item
+//    }
+//
+//    func saveData() {
+//        for i in itemArray {
+//            dataArray.append(itemToData(item: i))
+//        }
+//        defaults.set(dataArray, forKey: "ToDoListArray") // Add the dataArray to the user defaults to store locally
+//    }
 
     //MARK: - Tableview Datasource Methods
     
@@ -102,19 +80,14 @@ class TodoListViewController: UITableViewController {
     
     // Row was selected
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-//        print(itemArray[indexPath.row])
-//        let cell = tableView.cellForRow(at: indexPath) // Grab a reference to the cell that we selected
         let row = indexPath.row
         let item = itemArray[row]
         
         // Invert the value of the done property, since it was selected
         item.done = !item.done
         
-        // Now that we've changed the done property, reload the data so it can be reflected in the table
-        tableView.reloadData()
-        
-        dataArray[row] = itemToData(item: item)
-        self.defaults.set(self.dataArray, forKey: "ToDoListArray")
+        // Now that we've changed the done property, save and reload the data so it can be reflected in the table
+        saveItems()
         
         // Make the selection not persist or stay highlighted
         tableView.deselectRow(at: indexPath, animated: true)
@@ -130,15 +103,15 @@ class TodoListViewController: UITableViewController {
             
             let textField = alert.textFields![0]
             print("Textfield: \(textField.text!)")
-            let newItem = Item(title: textField.text!, done: false)
-            
-            //transform item into
+            let newItem = Item()
+            newItem.title = textField.text!
             
             self.itemArray.append(newItem)
-            self.dataArray.append(self.itemToData(item: newItem))
-            self.tableView.reloadData() // Need to reload data once data is changed
+            self.saveItems()
             
-            self.defaults.set(self.dataArray, forKey: "ToDoListArray") // Add the dataArray to the user defaults to store locally
+//            self.dataArray.append(self.itemToData(item: newItem))
+            
+            
         }
         alert.addTextField { (alertTextField) in
             // What will happen once the text field is added to the alert
@@ -147,6 +120,30 @@ class TodoListViewController: UITableViewController {
         
         alert.addAction(action)
         present(alert, animated: true, completion: nil)
+    }
+    
+    //MARK: - Model Manipulation Methods
+    
+    func saveItems() {
+        let encoder = PropertyListEncoder()
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        } catch {
+            print("Error encoding item array, \(error)")
+        }
+        self.tableView.reloadData() // Need to reload data once data is changed
+    }
+    
+    func loadItems() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            } catch {
+                print("Error decoding, \(error)")
+            }
+        }
     }
     
 }
