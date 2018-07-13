@@ -13,6 +13,12 @@ import CoreData
 class TodoListViewController: UITableViewController {
     
     var itemArray = [Item]()
+    var selectedCategory : Category? {
+        // Everything here happens once a value is set for selectedCategory
+        didSet {
+            loadItems()
+        }
+    }
     
     let documentsFolderPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first // Path to Documents in User dir
     // Grab a reference to the singleton app instance (our app when it's running) and its delegate, to then access AppDelegate's conainer/database's context var
@@ -23,30 +29,12 @@ class TodoListViewController: UITableViewController {
         // Do any additional setup after loading the view, typically from a nib.
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         
-        loadItems()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
-    //MARK: - Transforming between Item objects and Data objects
-    
-//    func itemToData(item: Item) -> Data {
-//        return NSKeyedArchiver.archivedData(withRootObject: item)
-//    }
-//
-//    func dataToItem(data: Data) -> Item {
-//        return NSKeyedUnarchiver.unarchiveObject(with: data) as! Item
-//    }
-//
-//    func saveData() {
-//        for i in itemArray {
-//            dataArray.append(itemToData(item: i))
-//        }
-//        defaults.set(dataArray, forKey: "ToDoListArray") // Add the dataArray to the user defaults to store locally
-//    }
 
     //MARK: - Tableview Datasource Methods
     
@@ -82,8 +70,6 @@ class TodoListViewController: UITableViewController {
         let row = indexPath.row
         let item = itemArray[row]
         
-//        context.delete(item)
-//        itemArray.remove(at: row)
         // Invert the value of the done property, since it was selected
         item.done = !item.done
         
@@ -107,6 +93,7 @@ class TodoListViewController: UITableViewController {
             let newItem = Item(context: self.context)
             newItem.title = textField.text!
             newItem.done = false
+            newItem.parentCategory = self.selectedCategory
             
             self.itemArray.append(newItem)
             self.saveItems()
@@ -137,6 +124,16 @@ class TodoListViewController: UITableViewController {
     
     // The = Item.fetchrequest() here is a default value, allowing us to call this method without providing a request
     func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
+
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+        
+        if let predicate = request.predicate {
+            let compound = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, categoryPredicate])
+            request.predicate = compound
+        } else {
+            request.predicate = categoryPredicate
+        }
+    
         do {
             itemArray = try context.fetch(request)
         } catch {
