@@ -54,6 +54,7 @@ class CategoryViewController: SwipeTableViewController {
         
         if let indexPath = tableView.indexPathForSelectedRow {
             destinationVC.selectedCategory = categories?[indexPath.row]
+            destinationVC.categoryColor = categories?[indexPath.row].backgroundColor
         }
     }
     

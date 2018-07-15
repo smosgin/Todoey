@@ -8,11 +8,13 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 // Since we inherit uitableviewcontroller, we don't need to set ourselves as the delegates for it, or set up iboutlets for it
 class TodoListViewController: SwipeTableViewController {
     
     var todoItems : Results<Item>?
+    var categoryColor : String?
     let realm = try! Realm()
     
     var selectedCategory : Category? {
@@ -25,7 +27,7 @@ class TodoListViewController: SwipeTableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        
+        tableView.separatorStyle = .none
     }
 
     override func didReceiveMemoryWarning() {
@@ -40,6 +42,19 @@ class TodoListViewController: SwipeTableViewController {
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
         if let item = todoItems?[indexPath.row] {
             cell.textLabel?.text = item.title
+            if let categoryColorText = categoryColor {
+                if let itemColor = UIColor(hexString: categoryColorText) {
+                    if let color = itemColor.darken(byPercentage: CGFloat(indexPath.row) / CGFloat(todoItems!.count))  { // Safe to unwrap todoItems here because we already got an item from it in this block
+                        cell.backgroundColor = color
+                        cell.textLabel?.textColor = ContrastColorOf(color, returnFlat: true)
+                    }
+                }
+            } else {
+                if let color = FlatWhite().darken(byPercentage: CGFloat(indexPath.row) / CGFloat(todoItems!.count))  { // Safe to unwrap todoItems here because we already got an item from it in this block
+                    cell.backgroundColor = color
+                    cell.textLabel?.textColor = ContrastColorOf(color, returnFlat: true)
+                }
+            }
             
             //        if item.done == true {
             //            cell.accessoryType = .checkmark
