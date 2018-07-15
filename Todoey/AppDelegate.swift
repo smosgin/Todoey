@@ -30,7 +30,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 if (oldSchemaVersion < 1) {
                     print("Entered migration")
                     migration.enumerateObjects(ofType: Item.className(), { (oldObject, newObject) in
-                        newObject!["dateCreated"] = Date()
+                        newObject!["backgroundColor"] = UIColor.randomFlat.hexValue()
                         print("Completed migration")
                     })
                 }
