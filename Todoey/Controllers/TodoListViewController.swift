@@ -16,6 +16,7 @@ class TodoListViewController: SwipeTableViewController {
     var todoItems : Results<Item>?
     var categoryColor : String?
     let realm = try! Realm()
+    @IBOutlet weak var searchBar: UISearchBar!
     
     var selectedCategory : Category? {
         // Everything here happens once a value is set for selectedCategory
@@ -28,6 +29,33 @@ class TodoListViewController: SwipeTableViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         tableView.separatorStyle = .none
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        // Here we're using guard lets to avoid a lengthy if let pyramid. Guard lets are good for when you don't expect the failure to happen with any sort of regularity
+        guard let colorHex = selectedCategory?.backgroundColor else {fatalError()}
+        title = selectedCategory?.name
+        
+        updateNavBar(withHexCode: colorHex)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        
+        updateNavBar(withHexCode: "FF85FF")
+    }
+    
+    //MARK: - Nav Bar Setup Methods
+    
+    func updateNavBar(withHexCode colorHexCode: String) {
+        guard let navBar = navigationController?.navigationBar else {fatalError("Navigation controller does not exist.")}
+        
+        guard let navBarColor = UIColor(hexString: colorHexCode) else {fatalError()}
+        navBar.barTintColor = navBarColor
+        navBar.tintColor = ContrastColorOf(navBarColor, returnFlat: true)
+        
+        navBar.largeTitleTextAttributes = [NSAttributedStringKey.foregroundColor: ContrastColorOf(navBarColor, returnFlat: true)]
+        
+        searchBar.barTintColor = navBarColor
     }
 
     override func didReceiveMemoryWarning() {
