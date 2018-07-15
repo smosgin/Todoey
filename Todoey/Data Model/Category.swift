@@ -11,5 +11,5 @@ import RealmSwift
 
 class Category: Object {
     @objc dynamic var name: String = ""
-    let items = List<Item>() // Each category has a list of items
+    let items = List<Item>() // Each category has a list of items. Specifies one-to-many relationship
 }

@@ -9,7 +9,7 @@
 import UIKit
 import RealmSwift
 
-class CategoryViewController: UITableViewController {
+class CategoryViewController: SwipeTableViewController {
     
     // From the Realm docs:
     /* Like any disk I/O operation, creating a Realm instance could sometimes fail if resources are constrained. In practice, this can only happen the first time a Realm instance is created on a given thread. Subsequent accesses to a Realm from the same thread will reuse a cached instance
@@ -25,12 +25,11 @@ class CategoryViewController: UITableViewController {
         
 //        realm = try! Realm()
         loadCategories()
-        
     }
 
     //MARK: - TableView Datasource Methods
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath) // Take the cell from the SwipeTableViewController superclass and modify it
         
         cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories added yet"
         
@@ -73,6 +72,20 @@ class CategoryViewController: UITableViewController {
         categories = realm.objects(Category.self)
         
         tableView.reloadData()
+    }
+    
+    //MARK: - Delete Data from Swipe
+    
+    override func updateModel(at indexPath: IndexPath) {
+        if let categoryForDeletion = self.categories?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(categoryForDeletion)
+                }
+            } catch {
+                print("Error deleting category, \(error)")
+            }
+        }
     }
     
     //MARK: - Add New Categories
