@@ -12,21 +12,44 @@ import ChameleonFramework
 
 class CategoryViewController: SwipeTableViewController {
     
-    // From the Realm docs:
-    /* Like any disk I/O operation, creating a Realm instance could sometimes fail if resources are constrained. In practice, this can only happen the first time a Realm instance is created on a given thread. Subsequent accesses to a Realm from the same thread will reuse a cached instance
-    */
-    // Already tried accessing Realm the first time in AppDelegate
-    let realm = try! Realm()
-    
     var categories : Results<Category>?
+    var notificationToken: NotificationToken?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         
-//        realm = try! Realm()
         loadCategories()
+        
+        // Observe for changes in the Categories results and reloadData whenever there are changes
+        notificationToken = categories?.observe({ (changes) in
+            switch changes {
+            case .initial:
+                self.tableView.reloadData()
+            case .update(_, let deletions, let insertions, let modifications):
+                if deletions.count == 0 {
+                    self.tableView.reloadData()
+                }
+            case .error(let error):
+                print(error)
+            }
+        })
+        
+        // Handle all Realm related errors here
+        RealmService.shared.observeRealmErrors(in: self) { (error) in
+            print(error ?? "no error detected")
+        }
+        
         tableView.separatorStyle = .none
+    }
+    
+    deinit {
+        notificationToken?.invalidate() // Stop observing for changes in the Realm once this view disappears
+        RealmService.shared.stopObservingErrors(in: self)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
     }
 
     //MARK: - TableView Datasource Methods
@@ -65,7 +88,7 @@ class CategoryViewController: SwipeTableViewController {
     
     //MARK: - Data Manipulation Methods
     func save(category: Category) {
-//        let realm = try! Realm()
+        let realm = RealmService.shared.realm
         do{
             try realm.write {
                 realm.add(category)
@@ -73,27 +96,29 @@ class CategoryViewController: SwipeTableViewController {
         } catch {
             print("Error saving categories \(error)")
         }
-        tableView.reloadData()
+//        tableView.reloadData()
     }
     
     func loadCategories() {
-//        let realm = try! Realm()
+        let realm = RealmService.shared.realm
         categories = realm.objects(Category.self)
         
-        tableView.reloadData()
+//        tableView.reloadData()
     }
     
     //MARK: - Delete Data from Swipe
     
     override func updateModel(at indexPath: IndexPath) {
         if let categoryForDeletion = self.categories?[indexPath.row] {
-            do {
-                try self.realm.write {
-                    self.realm.delete(categoryForDeletion)
-                }
-            } catch {
-                print("Error deleting category, \(error)")
-            }
+            RealmService.shared.delete(categoryForDeletion)
+//            let realm = RealmService.shared.realm
+//            do {
+//                try realm.write {
+//                    realm.delete(categoryForDeletion)
+//                }
+//            } catch {
+//                print("Error deleting category, \(error)")
+//            }
         }
     }
     
